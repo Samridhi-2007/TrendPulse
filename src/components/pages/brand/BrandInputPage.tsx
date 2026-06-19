@@ -14,6 +14,8 @@ import {
   Loader2,
 } from "lucide-react";
 
+import { trends } from "@/lib/mock/data";
+import { getBestTrendForBrand } from "@/lib/mock/matching";
 import { useDemoStore } from "@/lib/state/demoStore";
 
 const toOpt = (v: string) => ({ value: v, label: v });
@@ -252,24 +254,26 @@ export function BrandInputPage() {
   const [working, setWorking] = React.useState(false);
 
   async function onAnalyze() {
-    setSelectedTrend(null);
     setSelectedCreators([]);
     setGeneratedBrief(null);
 
-    setBrand({
+    const nextBrand = {
       name: brandName,
       industry,
       audience,
       budgetRange,
       location,
-    });
+      notes,
+    };
+
+    setBrand(nextBrand);
+    setSelectedTrend(getBestTrendForBrand(nextBrand, trends));
 
     setWorking(true);
     setProgress(0);
 
     const steps = [15, 35, 55, 72, 88, 100];
     for (let i = 0; i < steps.length; i++) {
-      // eslint-disable-next-line no-await-in-loop
       await new Promise((r) => setTimeout(r, 450));
       setProgress(steps[i]);
     }
@@ -514,11 +518,11 @@ export function BrandInputPage() {
             </div>
           </StaggerReveal>
 
-          {/* Output preview card */}
-          <StaggerReveal index={2}>
-            <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-xl">
-              <h3 className="text-sm font-medium text-white/50">
-                What you'll get
+              {/* Output preview card */}
+              <StaggerReveal index={2}>
+                <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-xl">
+                  <h3 className="text-sm font-medium text-white/50">
+                What you&apos;ll get
               </h3>
               <ul className="mt-3 space-y-2.5">
                 {[

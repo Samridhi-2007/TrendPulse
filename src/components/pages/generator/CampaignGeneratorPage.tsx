@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
   BarChart3,
   Clock3,
@@ -19,15 +18,15 @@ import {
 import AppShell from "@/components/shell/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useDemoStore } from "@/lib/state/demoStore";
 import {
   creators,
   sampleBriefs,
+  trends,
   type CampaignBrief,
-  type Creator,
   type Trend,
 } from "@/lib/mock/data";
+import { getBestTrendForBrand, getCreatorsForTrend } from "@/lib/mock/matching";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -140,23 +139,12 @@ function buildCreatorBrief(trend: Trend, brand: BrandContext): RichCampaignBrief
   };
 }
 
-function pickCreatorsForTrend(trend: Trend): Creator[] {
-  const categoryTerms = [trend.category.toLowerCase(), trend.name.toLowerCase().split(" ")[0]];
-  return creators
-    .slice()
-    .sort((a, b) => {
-      const aMatch = categoryTerms.some((term) => a.niche.toLowerCase().includes(term)) ? 12 : 0;
-      const bMatch = categoryTerms.some((term) => b.niche.toLowerCase().includes(term)) ? 12 : 0;
-      return b.fitScore + bMatch - (a.fitScore + aMatch);
-    })
-    .slice(0, 3);
-}
-
 export function CampaignGeneratorPage() {
   const router = useRouter();
   const {
     brand,
     selectedTrend,
+    setSelectedTrend,
     generatedBrief,
     setGeneratedBrief,
     selectedCreators,
@@ -164,28 +152,30 @@ export function CampaignGeneratorPage() {
   } = useDemoStore();
 
   const [working, setWorking] = React.useState(false);
+  const effectiveTrend = selectedTrend ?? getBestTrendForBrand(brand, trends);
 
   const brief: RichCampaignBrief | null =
     (generatedBrief as RichCampaignBrief | null) ??
-    (selectedTrend ? buildCreatorBrief(selectedTrend, brand) : null);
+    (effectiveTrend ? buildCreatorBrief(effectiveTrend, brand) : null);
 
   async function runGenerate(regenerate?: boolean) {
-    if (!selectedTrend) return;
+    if (!effectiveTrend) return;
     setWorking(true);
+    setSelectedTrend(effectiveTrend);
 
     for (const ms of [450, 420, 380]) {
       await sleep(ms);
     }
 
     const nextBrief = {
-      ...(sampleBriefs[selectedTrend.id] ?? {}),
-      ...buildCreatorBrief(selectedTrend, brand),
+      ...(sampleBriefs[effectiveTrend.id] ?? {}),
+      ...buildCreatorBrief(effectiveTrend, brand),
     };
 
     setGeneratedBrief(nextBrief);
 
     if (selectedCreators.length === 0 || regenerate) {
-      setSelectedCreators(pickCreatorsForTrend(selectedTrend));
+      setSelectedCreators(getCreatorsForTrend(effectiveTrend, creators));
     }
 
     setWorking(false);
@@ -198,40 +188,80 @@ export function CampaignGeneratorPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <div className="text-sm font-semibold text-white/70">Creator Trend Generator</div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">AI Generated Trend Brief</h1>
-            <p className="mt-3 max-w-2xl text-white/70">
-              Converts trend signals into a creator-ready summary, content angles, hooks, and posting plan.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {selectedTrend && (
-              <Badge className="bg-white/5 text-white/70 ring-1 ring-white/10">Trend: {selectedTrend.name}</Badge>
-            )}
-            <Button variant="primary" onClick={() => runGenerate(false)} disabled={working || !selectedTrend}>
-              {working ? "Generating..." : "Generate Creator Brief"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="mt-7 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="glass-strong overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div>
-                  <div className="text-sm font-semibold text-white/70">Generated Output</div>
-                  <div className="mt-2 text-2xl font-semibold">Creator-ready trend brief</div>
+        <div className="space-y-5">
+          <section className="glass-strong overflow-hidden rounded-2xl">
+            <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="p-5 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-white/70">
+                      Creator Trend Generator
+                    </div>
+                    <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                      AI Generated Trend Brief
+                    </h1>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {effectiveTrend && (
+                        <Badge className="bg-white/5 text-white/70 ring-1 ring-white/10">
+                          Trend: {effectiveTrend.name}
+                        </Badge>
+                      )}
+                      {brand?.name && (
+                        <Badge className="bg-white/5 text-white/70 ring-1 ring-white/10">
+                          Brand: {brand.name}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="primary"
+                    onClick={() => runGenerate(false)}
+                    disabled={working || !effectiveTrend}
+                    className="rounded-2xl"
+                  >
+                    {working ? "Generating..." : "Generate Creator Brief"}
+                  </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => onCopy(JSON.stringify(brief, null, 2))}>
+                {!brief ? (
+                  <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-white/70">
+                    Select a trend in the Dashboard to generate a creator brief.
+                  </div>
+                ) : (
+                  <div className="mt-6 grid gap-4 md:grid-cols-3">
+                    <MetricTile label="Trend Score" value={`${effectiveTrend?.score ?? 0}/100`} />
+                    <MetricTile label="Velocity" value={`+${effectiveTrend?.growthPct ?? 0}%`} />
+                    <MetricTile label="Half-Life" value={`${effectiveTrend?.halfLifeHours ?? 0}h`} />
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-white/10 bg-black/15 p-5 sm:p-6 lg:border-l lg:border-t-0">
+                <div>
+                  <div className="text-sm font-semibold text-white/70">
+                    Export Actions
+                  </div>
+                  <div className="mt-2 text-xl font-semibold">
+                    Creator-ready output
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onCopy(JSON.stringify(brief, null, 2))}
+                    disabled={!brief}
+                  >
                     <Copy className="h-4 w-4" />
                     Copy
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => runGenerate(true)} disabled={working || !selectedTrend}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => runGenerate(true)}
+                    disabled={working || !effectiveTrend}
+                  >
                     <RotateCcw className="h-4 w-4" />
                     Regenerate
                   </Button>
@@ -254,176 +284,200 @@ export function CampaignGeneratorPage() {
                     Export
                   </Button>
                 </div>
+
+                <Button
+                  variant="primary"
+                  className="mt-4 w-full rounded-2xl"
+                  onClick={() => router.push("/creators")}
+                >
+                  Go to Creator Matching
+                </Button>
               </div>
+            </div>
+          </section>
 
-              {!brief ? (
-                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-white/70">
-                  Select a trend in the Dashboard to generate a creator brief.
-                </div>
-              ) : (
-                <div className="mt-5 space-y-5">
-                  <SectionCard title="Trend Summary" icon={<BarChart3 className="h-4 w-4 text-sky-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.trendSummary}</div>
-                  </SectionCard>
-
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <SectionCard title="Urgency Signal" icon={<Clock3 className="h-4 w-4 text-amber-200" />}>
-                      <div className="text-sm leading-6 text-white/80">{brief.urgencySignal}</div>
-                    </SectionCard>
-
-                    <SectionCard title="Best Audience" icon={<Users className="h-4 w-4 text-teal-200" />}>
-                      <div className="flex flex-wrap gap-2">
-                        {brief.audience.map((item) => (
-                          <span
-                            key={item}
-                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/70"
-                          >
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </SectionCard>
+          {brief && (
+            <>
+              <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+                <SectionCard
+                  title="Executive Brief"
+                  icon={<BarChart3 className="h-4 w-4 text-sky-200" />}
+                >
+                  <p className="text-sm leading-6 text-white/80">
+                    {brief.trendSummary}
+                  </p>
+                  <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-500/10 p-4 text-sm font-semibold leading-6 text-violet-100">
+                    {brief.cta}
                   </div>
+                </SectionCard>
 
-                  <SectionCard title="Campaign Objective" icon={<Target className="h-4 w-4 text-violet-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.objective}</div>
-                  </SectionCard>
-
-                  <SectionCard title="Creator Angle" icon={<Lightbulb className="h-4 w-4 text-yellow-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.creatorAngle}</div>
-                  </SectionCard>
-
-                  <SectionCard title="Content Strategy" icon={<ListChecks className="h-4 w-4 text-emerald-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.contentStrategy}</div>
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      {brief.contentPillars.map((pillar) => (
-                        <div key={pillar} className="rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-white/75">
-                          {pillar}
-                        </div>
-                      ))}
-                    </div>
-                  </SectionCard>
-
-                  <SectionCard title="Hook Bank" icon={<Sparkles className="h-4 w-4 text-fuchsia-200" />}>
-                    <div className="space-y-2">
-                      {brief.hooks.map((hook) => (
-                        <div key={hook} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white/80">
-                          {hook}
-                        </div>
-                      ))}
-                    </div>
-                  </SectionCard>
-
-                  <SectionCard title="Reel Script" icon={<Sparkles className="h-4 w-4 text-violet-200" />}>
-                    <pre className="whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/75">
-                      {brief.reelScript}
-                    </pre>
-                  </SectionCard>
-
-                  <div className="grid gap-5 md:grid-cols-3">
-                    {brief.formats.map((format) => (
-                      <SectionCard key={format.name} title={format.name} icon={<Sparkles className="h-4 w-4 text-cyan-200" />}>
-                        <div className="text-sm leading-6 text-white/75">{format.reason}</div>
-                      </SectionCard>
+                <SectionCard
+                  title="Urgency + Audience"
+                  icon={<Clock3 className="h-4 w-4 text-amber-200" />}
+                >
+                  <p className="text-sm leading-6 text-white/78">
+                    {brief.urgencySignal}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {brief.audience.map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/70"
+                      >
+                        {item}
+                      </span>
                     ))}
                   </div>
+                </SectionCard>
+              </div>
 
-                  <SectionCard title="Posting Plan" icon={<Clock3 className="h-4 w-4 text-amber-200" />}>
-                    <ol className="space-y-3">
-                      {brief.postingPlan.map((step, index) => (
-                        <li key={step} className="flex gap-3 text-sm text-white/75">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">
-                            {index + 1}
-                          </span>
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </SectionCard>
+              <div className="grid gap-5 lg:grid-cols-3">
+                <SectionCard
+                  title="Objective"
+                  icon={<Target className="h-4 w-4 text-violet-200" />}
+                >
+                  <p className="text-sm leading-6 text-white/78">
+                    {brief.objective}
+                  </p>
+                </SectionCard>
 
-                  <div className="grid gap-5 md:grid-cols-3">
-                    <SectionCard title="Proof Points" icon={<BarChart3 className="h-4 w-4 text-sky-200" />}>
-                      <CompactList items={brief.proofPoints} />
-                    </SectionCard>
+                <SectionCard
+                  title="Creator Angle"
+                  icon={<Lightbulb className="h-4 w-4 text-yellow-200" />}
+                >
+                  <p className="text-sm leading-6 text-white/78">
+                    {brief.creatorAngle}
+                  </p>
+                </SectionCard>
 
-                    <SectionCard title="Avoid" icon={<ListChecks className="h-4 w-4 text-rose-200" />}>
-                      <CompactList items={brief.avoid} />
-                    </SectionCard>
+                <SectionCard
+                  title="Next Handoff"
+                  icon={<Users className="h-4 w-4 text-teal-200" />}
+                >
+                  <p className="text-sm leading-6 text-white/78">
+                    {selectedCreators.length
+                      ? `Suggested creators: ${selectedCreators
+                          .map(
+                            (creator) =>
+                              `${creator.name} (${formatNumber(creator.followers)})`,
+                          )
+                          .join(", ")}.`
+                      : "Generate the brief to auto-pick best-fit demo creators."}
+                  </p>
+                </SectionCard>
+              </div>
 
-                    <SectionCard title="Success Metrics" icon={<Target className="h-4 w-4 text-emerald-200" />}>
-                      <CompactList items={brief.successMetrics} />
-                    </SectionCard>
-                  </div>
-
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <SectionCard title="Hashtags" icon={<Sparkles className="h-4 w-4 text-violet-200" />}>
-                      <div className="flex flex-wrap gap-2">
-                        {brief.hashtags.map((hashtag) => (
-                          <span
-                            key={hashtag}
-                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/70"
-                          >
-                            {hashtag}
-                          </span>
-                        ))}
+              <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+                <SectionCard
+                  title="Hook Bank"
+                  icon={<Sparkles className="h-4 w-4 text-fuchsia-200" />}
+                >
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    {brief.hooks.map((hook) => (
+                      <div
+                        key={hook}
+                        className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm leading-5 text-white/80"
+                      >
+                        {hook}
                       </div>
-                    </SectionCard>
+                    ))}
+                  </div>
+                </SectionCard>
 
-                    <SectionCard title="CTA" icon={<Sparkles className="h-4 w-4 text-violet-200" />}>
-                      <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-4 text-sm font-semibold text-violet-200">
-                        {brief.cta}
+                <SectionCard
+                  title="Reel Script"
+                  icon={<Sparkles className="h-4 w-4 text-violet-200" />}
+                >
+                  <pre className="max-h-[260px] overflow-auto whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-white/75">
+                    {brief.reelScript}
+                  </pre>
+                </SectionCard>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-2">
+                <SectionCard
+                  title="Content Strategy"
+                  icon={<ListChecks className="h-4 w-4 text-emerald-200" />}
+                >
+                  <p className="text-sm leading-6 text-white/78">
+                    {brief.contentStrategy}
+                  </p>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {brief.contentPillars.map((pillar) => (
+                      <div
+                        key={pillar}
+                        className="rounded-2xl border border-white/10 bg-black/20 p-3 text-sm leading-5 text-white/75"
+                      >
+                        {pillar}
                       </div>
-                    </SectionCard>
+                    ))}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </SectionCard>
 
-          <div className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
-            >
-              <Card className="glass-strong p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-semibold text-white/70">Creator handoff</div>
-                    <div className="mt-2 text-2xl font-semibold">Brief explains what to make</div>
+                <SectionCard
+                  title="Posting Plan"
+                  icon={<Clock3 className="h-4 w-4 text-amber-200" />}
+                >
+                  <ol className="grid gap-3 sm:grid-cols-2">
+                    {brief.postingPlan.map((step, index) => (
+                      <li key={step} className="flex gap-3 text-sm text-white/75">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">
+                          {index + 1}
+                        </span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </SectionCard>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-3">
+                <SectionCard
+                  title="Formats"
+                  icon={<Sparkles className="h-4 w-4 text-cyan-200" />}
+                >
+                  <div className="space-y-3">
+                    {brief.formats.map((format) => (
+                      <div key={format.name}>
+                        <div className="text-sm font-semibold text-white/85">
+                          {format.name}
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-white/60">
+                          {format.reason}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500/25 to-indigo-500/25 ring-1 ring-white/10" />
-                </div>
-                <ul className="mt-4 space-y-2 text-sm text-white/70">
-                  {["Trend reason summarized", "Urgency window included", "Creator hooks ready", "Posting plan mapped"].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <span className="mt-1 h-2 w-2 rounded-full bg-violet-300/80" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </motion.div>
+                </SectionCard>
 
-            <Card className="glass-strong p-6">
-              <div className="text-sm font-semibold text-white/70">Next</div>
-              <div className="mt-2 text-xl font-semibold">Match creators</div>
-              <p className="mt-2 text-sm text-white/70">
-                {selectedCreators.length
-                  ? `Suggested creators: ${selectedCreators
-                      .map((creator) => `${creator.name} (${formatNumber(creator.followers)})`)
-                      .join(", ")}.`
-                  : "Generate the brief to auto-pick best-fit demo creators."}
-              </p>
-              <Button
-                variant="primary"
-                className="mt-4 w-full rounded-2xl"
-                onClick={() => router.push("/creators")}
-              >
-                Go to Creator Matching
-              </Button>
-            </Card>
-          </div>
+                <SectionCard
+                  title="Proof + Metrics"
+                  icon={<BarChart3 className="h-4 w-4 text-sky-200" />}
+                >
+                  <CompactList items={[...brief.proofPoints, ...brief.successMetrics]} />
+                </SectionCard>
+
+                <SectionCard
+                  title="Hashtags + Avoid"
+                  icon={<ListChecks className="h-4 w-4 text-rose-200" />}
+                >
+                  <div className="flex flex-wrap gap-2">
+                    {brief.hashtags.map((hashtag) => (
+                      <span
+                        key={hashtag}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/70"
+                      >
+                        {hashtag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <CompactList items={brief.avoid} />
+                  </div>
+                </SectionCard>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </AppShell>
@@ -440,12 +494,23 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-5">
       <div className="flex items-center gap-3">
         {icon}
         <div className="text-sm font-semibold text-white/70">{title}</div>
       </div>
       <div className="mt-3">{children}</div>
+    </div>
+  );
+}
+
+function MetricTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <div className="text-xs font-semibold uppercase text-white/50">
+        {label}
+      </div>
+      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
     </div>
   );
 }

@@ -9,11 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDemoStore } from "@/lib/state/demoStore";
+import { trends } from "@/lib/mock/data";
+import { getBestTrendForBrand } from "@/lib/mock/matching";
 import { useRouter } from "next/navigation";
 
 export function CampaignLaunchPage() {
   const router = useRouter();
-  const { selectedTrend, selectedCreators } = useDemoStore();
+  const { brand, selectedTrend, selectedCreators } = useDemoStore();
+  const effectiveTrend = selectedTrend ?? getBestTrendForBrand(brand, trends);
 
   const [done, setDone] = React.useState(false);
 
@@ -77,7 +80,7 @@ export function CampaignLaunchPage() {
               </motion.div>
 
               <div className="mt-6 grid gap-4 md:grid-cols-3">
-                <MetricCard k="Selected Trend" v={selectedTrend?.name ?? "Glass Skin"} />
+                <MetricCard k="Selected Trend" v={effectiveTrend?.name ?? "Glass Skin"} />
                 <MetricCard k="Selected Creators" v={`${Math.max(1, selectedCreators.length)} Creators`} />
                 <MetricCard k="Estimated Reach" v={estimatedReach} />
                 <MetricCard k="Estimated Engagement" v={estimatedEngagement} />
