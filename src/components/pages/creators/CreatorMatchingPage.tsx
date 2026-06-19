@@ -7,25 +7,36 @@ import { Star } from "lucide-react";
 import AppShell from "@/components/shell/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { useDemoStore } from "@/lib/state/demoStore";
-import { creators } from "@/lib/mock/data";
+import { creators, trends } from "@/lib/mock/data";
+import { getBestTrendForBrand, getCreatorsForTrend } from "@/lib/mock/matching";
 import { useRouter } from "next/navigation";
 
 export function CreatorMatchingPage() {
   const router = useRouter();
-  const { selectedCreators, setSelectedCreators, setGeneratedBrief } = useDemoStore();
-
-  const [selected, setSelected] = React.useState<string[]>(
-    selectedCreators.length ? selectedCreators.map((c) => c.id) : ["neha", "rahul", "ananya"],
+  const { brand, selectedTrend, selectedCreators, setSelectedCreators } =
+    useDemoStore();
+  const effectiveTrend = selectedTrend ?? getBestTrendForBrand(brand, trends);
+  const matchedCreators = React.useMemo(
+    () =>
+      effectiveTrend
+        ? getCreatorsForTrend(effectiveTrend, creators)
+        : creators.slice(0, 3),
+    [effectiveTrend],
   );
 
-  const top = creators.slice().sort((a, b) => b.fitScore - a.fitScore)[0];
+  const [selected, setSelected] = React.useState<string[]>(
+    selectedCreators.length
+      ? selectedCreators.map((c) => c.id)
+      : matchedCreators.map((c) => c.id),
+  );
+
+  const top = matchedCreators[0] ?? creators[0];
 
   React.useEffect(() => {
-    // sync to store
     setSelectedCreators(creators.filter((c) => selected.includes(c.id)).slice(0, 3));
-  }, []);
+  }, [selected, setSelectedCreators]);
 
   return (
     <AppShell>
@@ -34,7 +45,9 @@ export function CreatorMatchingPage() {
           <div>
             <div className="text-sm font-semibold text-white/70">Creator Matching</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">Best Creator Matches</h1>
-            <p className="mt-3 text-white/70">Pick 3 creators. Fit bars animate; top match is highlighted.</p>
+            <p className="mt-3 text-white/70">
+              Pick 3 creators for {effectiveTrend?.name ?? "the selected trend"}. Fit bars animate; top match is highlighted.
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Badge className="bg-white/5 text-white/70 ring-1 ring-white/10">Top match: {top.name}</Badge>

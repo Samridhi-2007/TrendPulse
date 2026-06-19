@@ -10,6 +10,7 @@ type DemoState = {
     audience: string;
     budgetRange: string;
     location: string;
+    notes?: string;
   } | null;
   selectedTrend: Trend | null;
   selectedCreators: Creator[];
