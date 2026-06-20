@@ -35,7 +35,6 @@ export function CampaignLaunchPage() {
             <p className="mt-3 text-white/70">Demo simulates launch confirmation and success animation.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge className="bg-white/5 text-white/70 ring-1 ring-white/10">No backend</Badge>
             <Button variant="secondary" onClick={() => router.push("/dashboard")}>
               Back to Trends
             </Button>

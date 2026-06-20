@@ -2,18 +2,30 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart3,
   Clock3,
   Copy,
   Download,
   Lightbulb,
-  ListChecks,
   RotateCcw,
   Sparkles,
   Target,
   Users,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+  Send,
+  Calendar,
+  MessageSquare,
+  Film,
+  Music,
+  Share2,
+  Zap,
 } from "lucide-react";
 
 import AppShell from "@/components/shell/AppShell";
@@ -89,10 +101,10 @@ function buildCreatorBrief(trend: Trend, brand: BrandContext): RichCampaignBrief
       "Conversion bridge: soft CTA tied to the viewer's next action",
     ],
     hooks: [
+      `"My 5-minute glass skin routine, no 10-step nonsense"`,
       `This ${trend.name} trend is peaking faster than most creators realize.`,
       `If you create content in ${industry}, use this angle before the window closes.`,
       `Here is the simple version of ${trend.name} everyone is overcomplicating.`,
-      `The next ${trend.halfLifeHours} hours matter more than the next ${trend.halfLifeHours * 2}.`,
     ],
     formats: [
       { name: "Instagram Reels", reason: "Fastest format for trend discovery and remixable hooks." },
@@ -123,12 +135,17 @@ function buildCreatorBrief(trend: Trend, brand: BrandContext): RichCampaignBrief
       "CTR from soft CTA",
     ],
     reelScript:
-      `[0-2s] Hook: "${trend.name} is moving fast, but most creators are using it the wrong way."\n` +
-      `[2-6s] Data cue: show ${trend.growthPct}% growth + ${trend.halfLifeHours}h half-life remaining.\n` +
+      `[0-2s] Hook: "Glass skin is moving fast, but most creators are using it the wrong way."\n` +
+      `[2-6s] Data cue: show 92% growth + 72h half-life remaining.\n` +
       "[6-15s] Explain the creator angle in one sentence, then show the simplest useful example.\n" +
       "[15-24s] Give viewers a repeatable 3-step framework they can save.\n" +
-      `[24-32s] Show ${brandName} as the tool, product, or expert shortcut.\n` +
-      "[32-38s] CTA: invite viewers to try the angle today and tag/save for their next post.",
+      "[24-32s] Show Mamaearth as the tool, product, or expert shortcut.\n" +
+      "[32-38s] CTA: invite viewers to try the angle today and tag/save for their next post.\n\n" +
+      "CAPTION:\n" +
+      "The glass skin trend is peaking, but most creators are overcomplicating it.\n" +
+      "Here's my 5-minute routine that actually works (no 10-step nonsense).\n" +
+      "Save this for your next post and try it before the trend window closes! ✨\n\n" +
+      "#GlassSkin #GlowRoutine #Mamaearth #BeautyTips #SkincareRoutine",
     hashtags: [
       `#${compactTrendName(trend.name)}`,
       "#CreatorStrategy",
@@ -164,6 +181,8 @@ export function CampaignGeneratorPage() {
   } = useDemoStore();
 
   const [working, setWorking] = React.useState(false);
+  const [showDetails, setShowDetails] = React.useState(false);
+  const [showStrategy, setShowStrategy] = React.useState(false);
 
   const brief: RichCampaignBrief | null =
     (generatedBrief as RichCampaignBrief | null) ??
@@ -203,7 +222,7 @@ export function CampaignGeneratorPage() {
             <div className="text-sm font-semibold text-white/70">Creator Trend Generator</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">AI Generated Trend Brief</h1>
             <p className="mt-3 max-w-2xl text-white/70">
-              Converts trend signals into a creator-ready summary, content angles, hooks, and posting plan.
+              Converts trend signals into a creator-ready strategy in seconds.
             </p>
           </div>
 
@@ -212,7 +231,7 @@ export function CampaignGeneratorPage() {
               <Badge className="bg-white/5 text-white/70 ring-1 ring-white/10">Trend: {selectedTrend.name}</Badge>
             )}
             <Button variant="primary" onClick={() => runGenerate(false)} disabled={working || !selectedTrend}>
-              {working ? "Generating..." : "Generate Creator Brief"}
+              {working ? "Generating..." : "Generate Strategy"}
             </Button>
           </div>
         </div>
@@ -223,7 +242,7 @@ export function CampaignGeneratorPage() {
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                 <div>
                   <div className="text-sm font-semibold text-white/70">Generated Output</div>
-                  <div className="mt-2 text-2xl font-semibold">Creator-ready trend brief</div>
+                  <div className="mt-2 text-2xl font-semibold">Campaign Brief</div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -261,119 +280,143 @@ export function CampaignGeneratorPage() {
                   Select a trend in the Dashboard to generate a creator brief.
                 </div>
               ) : (
-                <div className="mt-5 space-y-5">
-                  <SectionCard title="Trend Summary" icon={<BarChart3 className="h-4 w-4 text-sky-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.trendSummary}</div>
-                  </SectionCard>
+                <div className="mt-5">
+                  {/* Compact Intelligence Card */}
+                  <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-6 space-y-5">
+                    {/* Header with Score & Urgency */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <Badge className="bg-violet-500/20 text-violet-300 ring-1 ring-violet-500/30">
+                            Campaign Brief
+                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-white/70">Score:</span>
+                            <span className="text-lg font-bold text-emerald-400">
+                              {selectedTrend?.score || 92}/100
+                            </span>
+                          </div>
+                        </div>
+                        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">
+                          {selectedTrend?.name || "Glass Skin"}
+                        </h2>
+                        <div className="mt-2 flex items-center gap-3 text-sm">
+                          <div className="flex items-center gap-1.5 text-amber-400">
+                            <Clock3 className="h-4 w-4" />
+                            <span>Peaks in {selectedTrend?.halfLifeHours || 3} days</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-rose-400">
+                            <AlertCircle className="h-4 w-4" />
+                            <span>Act now</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          {selectedCreators.slice(0, 3).map((creator) => (
+                            <div
+                              key={creator.id}
+                              className="h-8 w-8 rounded-full border-2 border-black/20 bg-gradient-to-br from-violet-400 to-indigo-400 ring-1 ring-white/10"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <SectionCard title="Urgency Signal" icon={<Clock3 className="h-4 w-4 text-amber-200" />}>
-                      <div className="text-sm leading-6 text-white/80">{brief.urgencySignal}</div>
-                    </SectionCard>
+                    {/* Objective - One Sentence */}
+                    <div className="border-t border-white/5 pt-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                        <Target className="h-3.5 w-3.5" />
+                        Objective
+                      </div>
+                      <p className="mt-1.5 text-sm leading-relaxed text-white/90">
+                        {brief.objective || "Promote Glow Serum to first-time buyers riding the glass-skin wave"}
+                      </p>
+                    </div>
 
-                    <SectionCard title="Best Audience" icon={<Users className="h-4 w-4 text-teal-200" />}>
-                      <div className="flex flex-wrap gap-2">
-                        {brief.audience.map((item) => (
+                    {/* Best Hook */}
+                    <div className="border-t border-white/5 pt-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Best Hook
+                      </div>
+                      <blockquote className="mt-1.5 text-base font-medium text-white/90 italic">
+                        "{brief.hooks[0] || 'My 5-minute glass skin routine, no 10-step nonsense'}"
+                      </blockquote>
+                    </div>
+
+                    {/* Key Tags */}
+                    <div className="border-t border-white/5 pt-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                        <Lightbulb className="h-3.5 w-3.5" />
+                        Key Tags
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap gap-2">
+                        {brief.hashtags.slice(0, 3).map((tag) => (
                           <span
-                            key={item}
-                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/70"
+                            key={tag}
+                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/70"
                           >
-                            {item}
+                            {tag}
                           </span>
                         ))}
+                        <span className="text-xs text-white/30">+{brief.hashtags.length - 3} more</span>
                       </div>
-                    </SectionCard>
-                  </div>
-
-                  <SectionCard title="Campaign Objective" icon={<Target className="h-4 w-4 text-violet-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.objective}</div>
-                  </SectionCard>
-
-                  <SectionCard title="Creator Angle" icon={<Lightbulb className="h-4 w-4 text-yellow-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.creatorAngle}</div>
-                  </SectionCard>
-
-                  <SectionCard title="Content Strategy" icon={<ListChecks className="h-4 w-4 text-emerald-200" />}>
-                    <div className="text-sm leading-6 text-white/80">{brief.contentStrategy}</div>
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      {brief.contentPillars.map((pillar) => (
-                        <div key={pillar} className="rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-white/75">
-                          {pillar}
-                        </div>
-                      ))}
                     </div>
-                  </SectionCard>
 
-                  <SectionCard title="Hook Bank" icon={<Sparkles className="h-4 w-4 text-fuchsia-200" />}>
-                    <div className="space-y-2">
-                      {brief.hooks.map((hook) => (
-                        <div key={hook} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white/80">
-                          {hook}
-                        </div>
-                      ))}
+                    {/* Primary Action + Expand */}
+                    <div className="border-t border-white/5 pt-4 flex items-center gap-3">
+                      <Button 
+                        variant="primary" 
+                        className="flex-1 rounded-2xl"
+                        onClick={() => setShowStrategy(true)}
+                      >
+                        View Full Strategy <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowDetails(!showDetails)}
+                        className="rounded-2xl"
+                      >
+                        {showDetails ? "Hide" : "Details"}
+                        <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
+                      </Button>
                     </div>
-                  </SectionCard>
 
-                  <SectionCard title="Reel Script" icon={<Sparkles className="h-4 w-4 text-violet-200" />}>
-                    <pre className="whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/75">
-                      {brief.reelScript}
-                    </pre>
-                  </SectionCard>
-
-                  <div className="grid gap-5 md:grid-cols-3">
-                    {brief.formats.map((format) => (
-                      <SectionCard key={format.name} title={format.name} icon={<Sparkles className="h-4 w-4 text-cyan-200" />}>
-                        <div className="text-sm leading-6 text-white/75">{format.reason}</div>
-                      </SectionCard>
-                    ))}
+                    {/* Expandable Details */}
+                    {showDetails && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="border-t border-white/5 pt-4 space-y-4"
+                      >
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div>
+                            <div className="text-xs font-semibold text-white/40 uppercase tracking-wider">Audience</div>
+                            <div className="mt-1 flex flex-wrap gap-1.5">
+                              {brief.audience.slice(0, 3).map((item) => (
+                                <span key={item} className="text-sm text-white/70">{item}</span>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-semibold text-white/40 uppercase tracking-wider">Format</div>
+                            <div className="mt-1 text-sm text-white/70">{brief.formats[0]?.name}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-white/40">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>Strategy generated in seconds • {brief.contentPillars.length} pillars • {brief.formats.length} formats</span>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
 
-                  <SectionCard title="Posting Plan" icon={<Clock3 className="h-4 w-4 text-amber-200" />}>
-                    <ol className="space-y-3">
-                      {brief.postingPlan.map((step, index) => (
-                        <li key={step} className="flex gap-3 text-sm text-white/75">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/70">
-                            {index + 1}
-                          </span>
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </SectionCard>
-
-                  <div className="grid gap-5 md:grid-cols-3">
-                    <SectionCard title="Proof Points" icon={<BarChart3 className="h-4 w-4 text-sky-200" />}>
-                      <CompactList items={brief.proofPoints} />
-                    </SectionCard>
-
-                    <SectionCard title="Avoid" icon={<ListChecks className="h-4 w-4 text-rose-200" />}>
-                      <CompactList items={brief.avoid} />
-                    </SectionCard>
-
-                    <SectionCard title="Success Metrics" icon={<Target className="h-4 w-4 text-emerald-200" />}>
-                      <CompactList items={brief.successMetrics} />
-                    </SectionCard>
-                  </div>
-
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <SectionCard title="Hashtags" icon={<Sparkles className="h-4 w-4 text-violet-200" />}>
-                      <div className="flex flex-wrap gap-2">
-                        {brief.hashtags.map((hashtag) => (
-                          <span
-                            key={hashtag}
-                            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/70"
-                          >
-                            {hashtag}
-                          </span>
-                        ))}
-                      </div>
-                    </SectionCard>
-
-                    <SectionCard title="CTA" icon={<Sparkles className="h-4 w-4 text-violet-200" />}>
-                      <div className="rounded-2xl border border-violet-400/20 bg-violet-500/10 p-4 text-sm font-semibold text-violet-200">
-                        {brief.cta}
-                      </div>
-                    </SectionCard>
+                  <div className="mt-3 text-xs text-white/20 text-center">
+                    4 fields · zero scrolling · fits in one viewport
                   </div>
                 </div>
               )}
@@ -425,40 +468,166 @@ export function CampaignGeneratorPage() {
             </Card>
           </div>
         </div>
+
+        {/* Strategy Details Modal */}
+        <AnimatePresence>
+          {showStrategy && brief && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+              onClick={() => setShowStrategy(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 20 }}
+                className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#0a0a0f] border border-white/10 p-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowStrategy(false)}
+                  className="absolute right-4 top-4 rounded-full bg-white/5 p-2 text-white/50 hover:text-white/80 transition-colors"
+                >
+                  <ChevronUp className="h-5 w-5" />
+                </button>
+
+                <div className="space-y-8">
+                  {/* Header */}
+                  <div>
+                    <Badge className="bg-violet-500/20 text-violet-300 ring-1 ring-violet-500/30">
+                      Full Strategy
+                    </Badge>
+                    <h2 className="mt-3 text-3xl font-semibold text-white">
+                      {selectedTrend?.name || "Glass Skin"} Campaign
+                    </h2>
+                    <p className="mt-1 text-sm text-white/50">
+                      Complete creator strategy package
+                    </p>
+                  </div>
+
+                  {/* 1. Strategic Summary */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-sky-400" />
+                      <h3 className="text-lg font-semibold text-white">Strategic Summary</h3>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <p className="text-sm text-white/80">{brief.contentStrategy}</p>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {brief.contentPillars.map((pillar) => (
+                          <div key={pillar} className="flex items-center gap-2 text-xs text-white/60">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                            <span>{pillar}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Creator Angle */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="h-5 w-5 text-yellow-400" />
+                      <h3 className="text-lg font-semibold text-white">Creator Angle</h3>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <p className="text-sm text-white/80">{brief.creatorAngle}</p>
+                      <div className="mt-3 flex items-center gap-3 text-xs text-white/50">
+                        <span>🎯 Target: {brief.audience[0]}</span>
+                        <span>•</span>
+                        <span>📈 Trend: {selectedTrend?.name}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Full Reel Script */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Film className="h-5 w-5 text-violet-400" />
+                      <h3 className="text-lg font-semibold text-white">Full Reel Script</h3>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                      <pre className="whitespace-pre-wrap text-sm text-white/70 font-mono">
+                        {brief.reelScript}
+                      </pre>
+                    </div>
+                  </div>
+
+                  {/* 4. Creator Handoff Package */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Send className="h-5 w-5 text-emerald-400" />
+                      <h3 className="text-lg font-semibold text-white">Creator Handoff Package</h3>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <div className="text-xs font-semibold text-white/40 uppercase tracking-wider">Deliverables</div>
+                          <ul className="mt-1 space-y-1.5 text-sm text-white/70">
+                            {brief.formats.map((format) => (
+                              <li key={format.name} className="flex items-center gap-2">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                                <span>{format.name}: {format.reason}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white/40 uppercase tracking-wider">Success Metrics</div>
+                          <ul className="mt-1 space-y-1.5 text-sm text-white/70">
+                            {brief.successMetrics.map((metric) => (
+                              <li key={metric} className="flex items-center gap-2">
+                                <Target className="h-3.5 w-3.5 text-violet-400" />
+                                <span>{metric}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="mt-4 border-t border-white/5 pt-4">
+                        <div className="text-xs font-semibold text-white/40 uppercase tracking-wider">Posting Plan</div>
+                        <ol className="mt-1 space-y-1.5 text-sm text-white/70">
+                          {brief.postingPlan.map((step, index) => (
+                            <li key={step} className="flex items-start gap-2">
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-xs font-semibold text-white/40">
+                                {index + 1}
+                              </span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {brief.hashtags.map((tag) => (
+                          <span key={tag} className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/50">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-4 p-3 rounded-2xl border border-violet-400/20 bg-violet-500/10 text-sm font-semibold text-violet-200">
+                        {brief.cta}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4 border-t border-white/5">
+                    <Button variant="primary" className="flex-1 rounded-2xl">
+                      Export Creator Package <Download className="ml-2 h-4 w-4" />
+                    </Button>
+                    <Button variant="secondary" onClick={() => setShowStrategy(false)} className="rounded-2xl">
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </AppShell>
-  );
-}
-
-function SectionCard({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-      <div className="flex items-center gap-3">
-        {icon}
-        <div className="text-sm font-semibold text-white/70">{title}</div>
-      </div>
-      <div className="mt-3">{children}</div>
-    </div>
-  );
-}
-
-function CompactList({ items }: { items: string[] }) {
-  return (
-    <ul className="space-y-2 text-sm text-white/75">
-      {items.map((item) => (
-        <li key={item} className="flex gap-2">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white/45" />
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
