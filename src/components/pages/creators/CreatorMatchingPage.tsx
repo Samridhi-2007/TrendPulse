@@ -9,11 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useDemoStore } from "@/lib/state/demoStore";
-<<<<<<< HEAD
-=======
-import { creators, trends } from "@/lib/mock/data";
-import { getBestTrendForBrand, getCreatorsForTrend } from "@/lib/mock/matching";
->>>>>>> 575d3e9a1fae83246fe1be7e883d08da9635417b
 import { useRouter } from "next/navigation";
 
 // Brand Profile Fields
@@ -235,7 +230,6 @@ const allCreators = [
 
 export function CreatorMatchingPage() {
   const router = useRouter();
-<<<<<<< HEAD
   const { selectedCreators, setSelectedCreators } = useDemoStore();
 
   const [selected, setSelected] = React.useState<string[]>([]);
@@ -396,30 +390,6 @@ export function CreatorMatchingPage() {
     setSelected(topThree.map(c => c.id));
     setSelectedCreators(topThree);
   }, []);
-=======
-  const { brand, selectedTrend, selectedCreators, setSelectedCreators } =
-    useDemoStore();
-  const effectiveTrend = selectedTrend ?? getBestTrendForBrand(brand, trends);
-  const matchedCreators = React.useMemo(
-    () =>
-      effectiveTrend
-        ? getCreatorsForTrend(effectiveTrend, creators)
-        : creators.slice(0, 3),
-    [effectiveTrend],
-  );
-
-  const [selected, setSelected] = React.useState<string[]>(
-    selectedCreators.length
-      ? selectedCreators.map((c) => c.id)
-      : matchedCreators.map((c) => c.id),
-  );
-
-  const top = matchedCreators[0] ?? creators[0];
-
-  React.useEffect(() => {
-    setSelectedCreators(creators.filter((c) => selected.includes(c.id)).slice(0, 3));
-  }, [selected, setSelectedCreators]);
->>>>>>> 575d3e9a1fae83246fe1be7e883d08da9635417b
 
   const handleBrandProfileSubmit = () => {
     const matchedCreators = getTopCreators(brandProfile);
@@ -453,13 +423,7 @@ export function CreatorMatchingPage() {
           <div>
             <div className="text-sm font-semibold text-white/70">Creator Matching</div>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">Best Creator Matches</h1>
-<<<<<<< HEAD
             <p className="mt-3 text-white/70">Top 3 creators ranked by weighted fit score</p>
-=======
-            <p className="mt-3 text-white/70">
-              Pick 3 creators for {effectiveTrend?.name ?? "the selected trend"}. Fit bars animate; top match is highlighted.
-            </p>
->>>>>>> 575d3e9a1fae83246fe1be7e883d08da9635417b
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Badge className="bg-white/5 text-white/70 ring-1 ring-white/10">
